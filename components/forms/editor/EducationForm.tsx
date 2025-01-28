@@ -123,7 +123,7 @@ const EducationForm = ({ resumeData, setResumeData }: EditorFormProps) => {
                 })
               }
             >
-              Add Work Experience
+              Add Education
             </Button>
           </div>
         </form>
