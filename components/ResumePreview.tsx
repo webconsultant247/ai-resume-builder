@@ -32,6 +32,7 @@ const ResumePreview = ({ resumeData, className }: ResumePreviewProps) => {
         className={cn("space-y-6 p-6", !width && "invisible")}
         style={{ zoom: (1 / 794) * width }}
       >
+        <pre>{JSON.stringify(resumeData, null, 2)}</pre>
         <PersonalInfoSection resumeData={resumeData} />
         <SummarySection resumeData={resumeData} />
         <WorkExperienceSection resumeData={resumeData} />

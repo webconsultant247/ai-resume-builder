@@ -3,16 +3,29 @@
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ResumeEditorFooter from "@/components/ResumeEditorFooter";
 import ResumePreviewWrapper from "@/components/ResumePreviewWrapper";
+import useAutoSaveResume from "@/hooks/useAutoSaveResume";
+import { useUnloadWarning } from "@/hooks/useUnloadWarning";
 import steps from "@/lib/steps";
-import { cn } from "@/lib/utils";
+import { ResumeServerData } from "@/lib/types";
+import { cn, mapToResumeValues } from "@/lib/utils";
 import { ResumeValues } from "@/lib/validation";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-const ResumeEditor = () => {
+interface ResumeEditorProps {
+  resumeToEdit: ResumeServerData | null;
+}
+
+const ResumeEditor = ({ resumeToEdit }: ResumeEditorProps) => {
   const searchParams = useSearchParams();
-  const [resumeData, setResumeData] = useState<ResumeValues>({});
+  const [resumeData, setResumeData] = useState<ResumeValues>(
+    resumeToEdit ? mapToResumeValues(resumeToEdit) : {}
+  );
   const [showSmallResumePreview, setShowSmallResumePreview] = useState(false);
+
+  const { isSaving, hasUnsavedChanges } = useAutoSaveResume(resumeData);
+
+  useUnloadWarning(hasUnsavedChanges);
 
   const currentStep = searchParams.get("step") ?? steps[0].key;
 
@@ -60,6 +73,7 @@ const ResumeEditor = () => {
         </div>
       </main>
       <ResumeEditorFooter
+        isSaving={isSaving}
         currentStep={currentStep}
         setCurrentStep={setStep}
         showSmallResumePreview={showSmallResumePreview}

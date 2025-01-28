@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import steps from "@/lib/steps";
+import { cn } from "@/lib/utils";
 import { FileUserIcon, PenLineIcon, X } from "lucide-react";
 import Link from "next/link";
 import React from "react";
@@ -9,6 +10,7 @@ interface ResumeEditorFooterProps {
   setCurrentStep: (stepKey: string) => void;
   showSmallResumePreview: boolean;
   setShowSmallResumePreview: (show: boolean) => void;
+  isSaving: boolean;
 }
 
 const ResumeEditorFooter = ({
@@ -16,6 +18,7 @@ const ResumeEditorFooter = ({
   setCurrentStep,
   showSmallResumePreview,
   setShowSmallResumePreview,
+  isSaving,
 }: ResumeEditorFooterProps) => {
   const previousStep = steps.find(
     (_, index) => steps[index + 1]?.key === currentStep
@@ -66,7 +69,14 @@ const ResumeEditorFooter = ({
               Close
             </Link>
           </Button>
-          <p className="opacity-0 text-muted-foreground">Saving...</p>
+          <p
+            className={cn(
+              "text-muted-foreground",
+              isSaving ? "opacity-100" : "opacity-0"
+            )}
+          >
+            Saving...
+          </p>
         </div>
       </div>
     </footer>

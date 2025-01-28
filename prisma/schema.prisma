@@ -45,7 +45,7 @@ model WorkExperience {
   id          String    @id @default(cuid())
   position    String?
   company     String?
-  startData   DateTime?
+  startDate   DateTime?
   endDate     DateTime?
   description String?
   resumeId    String
@@ -62,7 +62,7 @@ model Education {
   id        String    @id @default(cuid())
   degree    String?
   school    String?
-  startData DateTime?
+  startDate DateTime?
   endDate   DateTime?
   resumeId  String
   resume    Resume    @relation(fields: [resumeId], references: [id])
