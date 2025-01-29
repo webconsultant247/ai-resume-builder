@@ -29,8 +29,6 @@ export const getUserSubscriptionLevel = cache(
       return "pro_plus";
     }
 
-    console;
-
     throw new Error("Invalid subscription level");
   }
 );
