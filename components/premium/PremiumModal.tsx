@@ -1,17 +1,54 @@
 "use client";
+import { createCheckoutSession } from "@/actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import usePremiumModal from "@/hooks/usePremiumModal";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { Check } from "lucide-react";
+import { useState } from "react";
 
 const premiumFeatures = ["AI Tools", "Up to 3 Resumes"];
 
 const premiumPlusFeatures = ["Unlimited Resumes", "Design Customizations"];
 const PremiumModal = () => {
   const { open, setOpen } = usePremiumModal();
+
+  const { toast } = useToast();
+
+  const [loading, setLoading] = useState(false);
+
+  const handlePremiumClick = async (priceId: string) => {
+    try {
+      setLoading(true);
+      const redirectUrl = await createCheckoutSession(priceId);
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        throw new Error("Redirect URL is required");
+      }
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error in creating a checkout",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        if (!loading) {
+          setOpen(open);
+        }
+      }}
+    >
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-bold">
@@ -34,7 +71,17 @@ const PremiumModal = () => {
                   </li>
                 ))}
               </ul>
-              <Button variant={"secondary"}>Get Premium</Button>
+              <Button
+                onClick={() =>
+                  handlePremiumClick(
+                    process.env.NEXT_PUBLIC_STRIPE_ID_PRO_MONTHLY!
+                  )
+                }
+                disabled={loading}
+                variant={"secondary"}
+              >
+                Get Premium
+              </Button>
             </div>
             <div className="border-1 border mx-6" />
             <div className="flex w-1/2 flex-col space-y-5">
@@ -49,7 +96,17 @@ const PremiumModal = () => {
                   </li>
                 ))}
               </ul>
-              <Button variant={"premium"}>Get Premium Plus</Button>
+              <Button
+                onClick={() =>
+                  handlePremiumClick(
+                    process.env.NEXT_PUBLIC_STRIPE_ID_PRO_PLUS_MONTHLY!
+                  )
+                }
+                disabled={loading}
+                variant={"premium"}
+              >
+                Get Premium Plus
+              </Button>
             </div>
           </div>
         </div>
