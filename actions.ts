@@ -1,8 +1,15 @@
 "use server";
 
+import { env } from "@/env";
 import openai from "@/lib/openai";
+import {
+  canCreateResume,
+  canUseAITools,
+  canUseCustomization,
+} from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import stripe from "@/lib/stripe";
+import { getUserSubscriptionLevel } from "@/lib/subscriptions";
 import {
   GenerateSummaryInput,
   generateSummarySchema,
@@ -32,12 +39,38 @@ export const saveResume = async (values: ResumeValues) => {
 
   //TODO: check Resume count for non-premium users
 
+  const subscriptionLevel = await getUserSubscriptionLevel(userId);
+
+  if (!id) {
+    const resumeCount = await prisma.resume.count({
+      where: { userId },
+    });
+
+    if (!canCreateResume(subscriptionLevel, resumeCount)) {
+      throw new Error(
+        "You have reached the maximum number of resumes allowed for your subscription level."
+      );
+    }
+  }
+
   const existingResume = id
     ? await prisma.resume.findUnique({ where: { id, userId } })
     : null;
 
   if (id && !existingResume) {
     throw new Error("Resume not found");
+  }
+
+  const hasCustomizations =
+    (resumeValues.borderStyle &&
+      resumeValues.borderStyle !== existingResume?.borderStyle) ||
+    (resumeValues.colorHex &&
+      resumeValues.colorHex !== existingResume?.colorHex);
+
+  if (hasCustomizations && canUseCustomization(subscriptionLevel)) {
+    throw new Error(
+      "You can't use customizations with your current subscription level."
+    );
   }
 
   let newPhotoUrl: string | undefined | null = undefined;
@@ -117,6 +150,8 @@ export const deleteResume = async (id: string) => {
     throw new Error("User not authenticated.");
   }
 
+  console.log(id);
+
   const resume = await prisma.resume.findUnique({
     where: { id, userId },
   });
@@ -136,6 +171,18 @@ export const deleteResume = async (id: string) => {
 
 export const generateSummary = async (input: GenerateSummaryInput) => {
   // TODO: check if user is premium
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User not authenticated");
+  }
+
+  const subscriptionLevel = await getUserSubscriptionLevel(userId);
+
+  if (!canUseAITools(subscriptionLevel)) {
+    throw new Error(
+      "You need to upgrade your subscription to use this feature."
+    );
+  }
 
   const { jobTitle, workExperiences, educations, skills } =
     generateSummarySchema.parse(input);
@@ -201,6 +248,18 @@ export const generateWorkExperience = async (
   input: GenerateWorkExperienceInput
 ) => {
   // TODO: check if user is premium
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User not authenticated");
+  }
+
+  const subscriptionLevel = await getUserSubscriptionLevel(userId);
+
+  if (!canUseAITools(subscriptionLevel)) {
+    throw new Error(
+      "You need to upgrade your subscription to use this feature."
+    );
+  }
 
   const { description } = generateWorkExperienceSchema.parse(input);
 
@@ -263,6 +322,10 @@ export const createCheckoutSession = async (priceId: string) => {
     throw new Error("User not authenticated");
   }
 
+  const stripeCustomerId = user.privateMetadata.stripeCustomerId as
+    | string
+    | undefined;
+
   const session = await stripe.checkout.sessions.create({
     line_items: [
       {
@@ -271,9 +334,15 @@ export const createCheckoutSession = async (priceId: string) => {
       },
     ],
     mode: "subscription",
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/billing/success`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/billing`,
-    customer_email: user.emailAddresses[0].emailAddress,
+    success_url: `${env.NEXT_PUBLIC_BASE_URL}/billing/success`,
+    cancel_url: `${env.NEXT_PUBLIC_BASE_URL}/billing`,
+    customer: stripeCustomerId,
+    customer_email: stripeCustomerId
+      ? undefined
+      : user.emailAddresses[0].emailAddress,
+    metadata: {
+      userId: user.id,
+    },
     subscription_data: {
       metadata: {
         userId: user.id,
@@ -281,7 +350,7 @@ export const createCheckoutSession = async (priceId: string) => {
     },
     custom_text: {
       terms_of_service_acceptance: {
-        message: `I have read AI Resume Builder's [terms of service](${process.env.NEXT_PUBLIC_BASE_URL}/terms) and agree to them.`,
+        message: `I have read AI Resume Builder's [terms of service](${env.NEXT_PUBLIC_BASE_URL}/terms) and agree to them.`,
       },
     },
     consent_collection: {
@@ -291,6 +360,31 @@ export const createCheckoutSession = async (priceId: string) => {
 
   if (!session) {
     throw new Error("Failed to create checkout session");
+  }
+
+  return session.url;
+};
+
+export const createCustomerPortalSession = async () => {
+  const user = await currentUser();
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+  const stripeCustomerId = user.privateMetadata.stripeCustomerId as
+    | string
+    | undefined;
+
+  if (!stripeCustomerId) {
+    throw new Error("Stripe customer ID not found");
+  }
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: stripeCustomerId,
+    return_url: `${env.NEXT_PUBLIC_BASE_URL}/billing`,
+  });
+
+  if (!session.url) {
+    throw new Error("Failed to create customer portal session");
   }
 
   return session.url;

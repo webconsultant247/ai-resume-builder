@@ -1,6 +1,9 @@
 import { generateSummary } from "@/actions";
 import LoadingButton from "@/components/forms/LoadingButton";
+import { useSubscriptionLevel } from "@/components/resumes/SubscriptionLevelProvider";
 import { useToast } from "@/hooks/use-toast";
+import usePremiumModal from "@/hooks/usePremiumModal";
+import { canUseAITools } from "@/lib/permissions";
 import { ResumeValues } from "@/lib/validation";
 import { WandSparkles } from "lucide-react";
 import React, { useState } from "react";
@@ -14,12 +17,18 @@ const GenerateSummaryButton = ({
   resumeData,
   onSummaryGenerated,
 }: GenerateSummaryButtonProps) => {
+  const subscriptionLevel = useSubscriptionLevel();
+  const premiumModal = usePremiumModal();
+
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
     //Todo: Implement the AI summary generation logic here for premium users
-
+    if (!canUseAITools(subscriptionLevel)) {
+      premiumModal.setOpen(true);
+      return;
+    }
     try {
       setLoading(true);
       const aiResponse = await generateSummary(resumeData);

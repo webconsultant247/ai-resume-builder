@@ -2,6 +2,7 @@
 import { createCheckoutSession } from "@/actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { env } from "@/env";
 import { useToast } from "@/hooks/use-toast";
 import usePremiumModal from "@/hooks/usePremiumModal";
 import { DialogTitle } from "@radix-ui/react-dialog";
@@ -74,7 +75,7 @@ const PremiumModal = () => {
               <Button
                 onClick={() =>
                   handlePremiumClick(
-                    process.env.NEXT_PUBLIC_STRIPE_ID_PRO_MONTHLY!
+                    env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO_MONTHLY
                   )
                 }
                 disabled={loading}
@@ -99,7 +100,7 @@ const PremiumModal = () => {
               <Button
                 onClick={() =>
                   handlePremiumClick(
-                    process.env.NEXT_PUBLIC_STRIPE_ID_PRO_PLUS_MONTHLY!
+                    env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO_PLUS_MONTHLY
                   )
                 }
                 disabled={loading}

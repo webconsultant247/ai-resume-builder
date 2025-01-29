@@ -1,9 +1,12 @@
+import { useSubscriptionLevel } from "@/components/resumes/SubscriptionLevelProvider";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import usePremiumModal from "@/hooks/usePremiumModal";
+import { canUseCustomization } from "@/lib/permissions";
 import { PaletteIcon } from "lucide-react";
 import { useState } from "react";
 import { Color, ColorChangeHandler, TwitterPicker } from "react-color";
@@ -15,6 +18,8 @@ interface ColorPickerProps {
 
 const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
   const [showPopover, setShowPopover] = useState(false);
+  const subscriptionLevel = useSubscriptionLevel();
+  const premiumModal = usePremiumModal();
 
   return (
     <Popover open={showPopover} onOpenChange={setShowPopover}>
@@ -23,7 +28,11 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
           variant={"outline"}
           size={"icon"}
           title="Change Resume Color"
-          onClick={() => setShowPopover(true)}
+          onClick={() => {
+            if (!canUseCustomization(subscriptionLevel))
+              premiumModal.setOpen(true);
+            else setShowPopover(true);
+          }}
         >
           <PaletteIcon className="size-5" />
         </Button>
