@@ -50,6 +50,7 @@ const PersonalInfoForm = ({ resumeData, setResumeData }: EditorFormProps) => {
           <FormField
             control={form.control}
             name="photo"
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             render={({ field: { value, ...fieldValue } }) => (
               <FormItem>
                 <FormLabel>Your Photo</FormLabel>

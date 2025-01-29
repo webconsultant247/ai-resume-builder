@@ -19,7 +19,7 @@ const ResumeItemActions = ({
   onPrintClick,
 }: ResumeItemActionsProps) => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-
+  console.log(showDeleteConfirmation);
   return (
     <>
       <DropdownMenu>
@@ -33,7 +33,10 @@ const ResumeItemActions = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem className="flex items-enter gap-2">
+          <DropdownMenuItem
+            onClick={() => setShowDeleteConfirmation(true)}
+            className="flex items-enter gap-2"
+          >
             <Trash2 className="size-4 text-primary" /> Delete
           </DropdownMenuItem>
           <DropdownMenuItem
